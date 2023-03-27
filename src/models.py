@@ -1,9 +1,10 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 from bson import ObjectId
-from pydantic import BaseModel, Field, root_validator
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel, Field
 
 from .fields import PyObjectId
 
@@ -21,25 +22,20 @@ class DbModel(BaseModel):
 
 class PaginationModel(BaseModel):
     total_count: int
-    total_pages: Optional[int]
     page: int
     size: int
-    data: list[Type[BaseModel]]
+    data: list[BaseModel]
 
-    @root_validator
-    def paginate(cls, values: dict):
-        total_count = values["total_count"]
-        size = values["size"]
-        values["total_pages"] = (
-            0
-            if total_count == 0
-            else 1
-            if total_count <= size
-            else total_count // size
-            if (total_count % size) == 0
-            else (total_count // size) + 1
-        )
-        return values
+    @property
+    def total_pages(self) -> int:
+        if self.total_count == 0:
+            return 0
+        return (self.total_count - 1) // self.size + 1
+
+    def paginate(self) -> dict:
+        return_data = jsonable_encoder(self)
+        return_data["total_pages"] = self.total_pages
+        return return_data
 
     class Config:
         allow_population_by_field_name = True
