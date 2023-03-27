@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from .fields import PyObjectId
 
 
+# TODO
 class DbModel(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
